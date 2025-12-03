@@ -1,13 +1,16 @@
 <template>
   <form @submit.prevent="submitForm">
-    <label>Title:</label>
-    <input v-model="title" required />
+    <label>Subject / Topic:</label>
+    <input v-model="topic" required />
 
-    <label>Description:</label>
-    <input v-model="description" required />
+    <label>Location:</label>
+    <input v-model="location" required />
 
-    <label>Date:</label>
-    <input type="date" v-model="date" required />
+    <label>Price (£):</label>
+    <input type="number" v-model.number="price" min="0" required />
+
+    <label>Spaces:</label>
+    <input type="number" v-model.number="space" min="0" required />
 
     <button type="submit">Add Lesson</button>
   </form>
@@ -16,31 +19,37 @@
 <script setup>
 import { ref } from 'vue';
 
-const title = ref('');
-const description = ref('');
-const date = ref('');
-
 const emit = defineEmits(['lesson-added']);
+
+const topic = ref('');
+const location = ref('');
+const price = ref(0);
+const space = ref(0);
 
 const submitForm = async () => {
   const response = await fetch('http://localhost:3000/lessons', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: title.value,
-      description: description.value,
-      date: date.value
+      topic: topic.value,
+      location: location.value,
+      price: price.value,
+      space: space.value
     })
   });
 
-  await response.json();
+  if (!response.ok) {
+    console.error('Failed to create lesson');
+    return;
+  }
 
-  // Tell parent to refresh the list
-  emit('lesson-added');
+  await response.json();
+  emit('lesson-added'); // notify parent to refresh
 
   // Reset form
-  title.value = '';
-  description.value = '';
-  date.value = '';
+  topic.value = '';
+  location.value = '';
+  price.value = 0;
+  space.value = 0;
 };
 </script>
