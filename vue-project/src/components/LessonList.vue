@@ -15,7 +15,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+
+const props = defineProps({
+  refreshKey: {
+    type: Number,
+    default: 0
+  }
+});
 
 const lessons = ref([]);
 const loading = ref(true);
@@ -39,4 +46,12 @@ const fetchLessons = async () => {
 };
 
 onMounted(fetchLessons);
+
+// whenever refreshKey changes, reload lessons
+watch(
+  () => props.refreshKey,
+  () => {
+    fetchLessons();
+  }
+);
 </script>
