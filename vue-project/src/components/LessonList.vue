@@ -1,57 +1,36 @@
 <template>
-  <section>
+  <div>
     <h2>Lessons</h2>
 
-    <p v-if="loading">Loading lessons...</p>
-    <p v-else-if="error" style="color: red;">{{ error }}</p>
-
-    <ul v-else>
+    <ul>
       <li v-for="lesson in lessons" :key="lesson.id">
-        <strong>{{ lesson.title }}</strong> – {{ lesson.date }}<br />
-        <small>{{ lesson.description }}</small>
+        <strong>{{ lesson.title }}</strong> – {{ lesson.date }} <br />
+        {{ lesson.description }}
       </li>
     </ul>
-  </section>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 
 const props = defineProps({
-  refreshKey: {
-    type: Number,
-    default: 0
-  }
+  refreshKey: Number
 });
 
 const lessons = ref([]);
-const loading = ref(true);
-const error = ref(null);
 
-const fetchLessons = async () => {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const response = await fetch('http://localhost:3000/api/lessons');
-    if (!response.ok) {
-      throw new Error('Failed to load lessons');
-    }
-    lessons.value = await response.json();
-  } catch (err) {
-    error.value = err.message || 'Something went wrong while loading lessons';
-  } finally {
-    loading.value = false;
-  }
+const loadLessons = async () => {
+  const res = await fetch('http://localhost:3000/lessons');
+  lessons.value = await res.json();
 };
 
-onMounted(fetchLessons);
+onMounted(loadLessons);
 
-// whenever refreshKey changes, reload lessons
 watch(
   () => props.refreshKey,
   () => {
-    fetchLessons();
+    loadLessons();
   }
 );
 </script>
