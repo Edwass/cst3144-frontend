@@ -2,19 +2,27 @@
   <main>
     <h1>Lessons Manager</h1>
 
-    <!-- Cart toggle -->
-    <div style="margin-bottom: 1rem;">
+    <!-- Toggle Buttons -->
+    <div>
       <button
-        :disabled="cart.length === 0"
-        @click="toggleCart"
+  :disabled="!showCart"  
+  @click="showCart = false"
+>
+  Lessons
+</button>
+
+
+      <button
+        :disabled="cart.length === 0 || showCart"
+        @click="showCart = true"
       >
-        {{ showCart ? 'Back to Lessons' : `View Cart (${cart.length})` }}
+        Shopping Cart ({{ cart.length }})
       </button>
     </div>
 
-    <!-- Lessons + form page -->
+    <!-- Lessons Page -->
     <section v-if="!showCart">
-      <LessonForm @lesson-added="handleLessonAdded" />
+      <LessonForm @lesson-added="fetchLessons" />
 
       <LessonList
         :lessons="lessons"
@@ -22,21 +30,12 @@
       />
     </section>
 
-    <!-- Cart page -->
+    <!-- Cart Page -->
     <section v-else>
-      <h2>Shopping Cart</h2>
-
-      <p v-if="cart.length === 0">Your cart is empty.</p>
-
-      <ul v-else>
-        <li v-for="(item, index) in cart" :key="item.cartItemId">
-          <strong>{{ item.topic }}</strong>
-          – {{ item.location }} – £{{ item.price }}
-          <button @click="removeFromCart(index, item.lessonId)">
-            Remove
-          </button>
-        </li>
-      </ul>
+      <ShoppingCart
+        :cart-items="cart"
+        @remove-one="handleRemoveFromCart"
+      />
     </section>
   </main>
 </template>
@@ -45,13 +44,20 @@
 import { ref, onMounted } from 'vue';
 import LessonForm from '../components/LessonForm.vue';
 import LessonList from '../components/LessonList.vue';
+import ShoppingCart from '../components/ShoppingCart.vue';
 
-// ---- state ----
-const lessons = ref([]);      // all lessons shown in list
-const cart = ref([]);         // items added to cart
-const showCart = ref(false);  // toggle between lessons & cart pages
 
-// ---- load lessons from backend ----
+// ------------------------------------------
+// STATE
+// ------------------------------------------
+const lessons = ref([]);       // List of all available lessons
+const cart = ref([]);          // Items in shopping cart
+const showCart = ref(false);   // Toggle lessons <-> cart view
+
+
+// ------------------------------------------
+// FETCH LESSONS FROM BACKEND
+// ------------------------------------------
 const fetchLessons = async () => {
   const res = await fetch('http://localhost:3000/lessons');
   lessons.value = await res.json();
@@ -59,22 +65,20 @@ const fetchLessons = async () => {
 
 onMounted(fetchLessons);
 
-// called when LessonForm emits "lesson-added"
-const handleLessonAdded = async () => {
-  await fetchLessons();
-};
 
-// called when LessonList emits "add-to-cart"
+// ------------------------------------------
+// ADD TO CART
+// ------------------------------------------
 const handleAddToCart = (lessonId) => {
   const lesson = lessons.value.find((l) => l.id === lessonId);
   if (!lesson || lesson.space <= 0) return;
 
-  // decrease available spaces
+  // Decrease available spaces
   lesson.space--;
 
-  // add one instance to cart
+  // Add an entry to cart
   cart.value.push({
-    cartItemId: Date.now() + Math.random(), // unique key for v-for
+    cartItemId: Date.now() + Math.random(),
     lessonId: lesson.id,
     topic: lesson.topic,
     location: lesson.location,
@@ -82,22 +86,26 @@ const handleAddToCart = (lessonId) => {
   });
 };
 
-// remove a single instance from cart and give space back
-const removeFromCart = (index, lessonId) => {
-  cart.value.splice(index, 1);
 
+// ------------------------------------------
+// REMOVE FROM CART (ONE ITEM AT A TIME)
+// ------------------------------------------
+const handleRemoveFromCart = (lessonId) => {
+  // Find index of one matching item
+  const index = cart.value.findIndex((c) => c.lessonId === lessonId);
+  if (index === -1) return;
+
+  cart.value.splice(index, 1); // remove item
+
+  // Restore space to its lesson
   const lesson = lessons.value.find((l) => l.id === lessonId);
   if (lesson) {
     lesson.space++;
   }
 
+  // If cart becomes empty, return to lessons page
   if (cart.value.length === 0) {
     showCart.value = false;
   }
-};
-
-const toggleCart = () => {
-  if (cart.value.length === 0) return;
-  showCart.value = !showCart.value;
 };
 </script>
