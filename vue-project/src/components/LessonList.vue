@@ -3,40 +3,26 @@
     <h2>Lessons</h2>
     <ul>
       <li v-for="lesson in lessons" :key="lesson.id">
-        <strong>{{ lesson.topic }}</strong>
-        <span> – {{ lesson.location }}</span>
-        <div>
-          Price: £{{ lesson.price }}
-          &nbsp;|&nbsp;
-          Spaces left: {{ lesson.space }}
-        </div>
+        <strong>{{ lesson.topic }}</strong> – {{ lesson.location }}
+        <br />
+        Price: £{{ lesson.price }} | Spaces left: {{ lesson.space }}
+        <br />
+        <button
+          :disabled="lesson.space === 0"
+          @click="$emit('add-to-cart', lesson.id)"
+        >
+          Add to Cart
+        </button>
       </li>
     </ul>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-
-const props = defineProps({
-  refreshKey: {
-    type: Number,
-    default: 0
-  }
+defineProps({
+  lessons: {
+    type: Array,
+    required: true,
+  },
 });
-
-const lessons = ref([]);
-
-const fetchLessons = async () => {
-  const res = await fetch('http://localhost:3000/lessons');
-  lessons.value = await res.json();
-};
-
-onMounted(fetchLessons);
-watch(
-  () => props.refreshKey,
-  () => {
-    fetchLessons();
-  }
-);
 </script>
