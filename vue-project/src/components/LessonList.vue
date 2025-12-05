@@ -1,12 +1,22 @@
 <template>
   <section>
     <h2>Lessons</h2>
+
     <ul>
-      <li v-for="lesson in lessons" :key="lesson.id">
+      <li
+        v-for="lesson in lessons"
+        :key="lesson.id"
+        style="margin-bottom: 8px"
+      >
+        <!-- Icon (Font Awesome) -->
+        <i class="fa-solid fa-graduation-cap" style="margin-right: 6px;"></i>
+
         <strong>{{ lesson.topic }}</strong> – {{ lesson.location }}
         <br />
-        Price: £{{ lesson.price }} | Spaces left: {{ lesson.space }}
+        Price: £{{ lesson.price }} |
+        Spaces left: {{ lesson.space }}
         <br />
+
         <button
           :disabled="lesson.space === 0"
           @click="$emit('add-to-cart', lesson.id)"
