@@ -19,38 +19,44 @@
       </li>
     </ul>
 
-    <!-- Checkout form (only if we have items) -->
-    <section v-if="groupedItems.length > 0" style="margin-top: 1rem;">
+    <!-- Only show checkout form if cart has items -->
+    <div v-if="groupedItems.length > 0" style="margin-top: 20px;">
       <h3>Checkout</h3>
 
-      <form @submit.prevent="onCheckout">
-        <div>
-          <label>Name:</label>
-          <input v-model="name" required />
+      <div>
+        <label>
+          Name:
+          <input v-model="name" type="text" />
+        </label>
+        <div v-if="nameError" style="color: red; font-size: 0.9em;">
+          {{ nameError }}
         </div>
+      </div>
 
-        <div>
-          <label>Phone:</label>
-          <input v-model="phone" required />
+      <div style="margin-top: 10px;">
+        <label>
+          Phone:
+          <input v-model="phone" type="text" />
+        </label>
+        <div v-if="phoneError" style="color: red; font-size: 0.9em;">
+          {{ phoneError }}
         </div>
+      </div>
 
-        <p v-if="name && !isNameValid" style="color: red;">
-          Name must contain letters and spaces only.
-        </p>
-        <p v-if="phone && !isPhoneValid" style="color: red;">
-          Phone must contain digits only.
-        </p>
-
-        <button type="submit" :disabled="!isFormValid">
-          Checkout
+      <div style="margin-top: 10px;">
+        <button
+          @click="submitOrder"
+          :disabled="!canSubmit"
+        >
+          Confirm Order
         </button>
-      </form>
-    </section>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
   cartItems: {
@@ -61,14 +67,17 @@ const props = defineProps({
 
 const emit = defineEmits(['remove-one', 'checkout']);
 
-// --------------------------------------------------
-// Group cart items by lessonId
-// --------------------------------------------------
+/**
+ * Group cart items by lessonId and compute quantity.
+ * Each grouped item has:
+ * { lessonId, topic, location, price, quantity }
+ */
 const groupedItems = computed(() => {
   const map = new Map();
 
   for (const item of props.cartItems) {
-    const id = item.lessonId; // we store lessonId in cart
+    const id = item.lessonId ?? item.id; // support both shapes
+
     if (!map.has(id)) {
       map.set(id, {
         lessonId: id,
@@ -85,28 +94,60 @@ const groupedItems = computed(() => {
   return Array.from(map.values());
 });
 
-// --------------------------------------------------
-// Checkout form state + validation
-// --------------------------------------------------
+// ----- checkout state & validation -----
 const name = ref('');
 const phone = ref('');
+const nameError = ref('');
+const phoneError = ref('');
 
-const isNameValid = computed(() => /^[A-Za-z\s]+$/.test(name.value));
-const isPhoneValid = computed(() => /^\d+$/.test(phone.value));
+// simple validators
+function validateName(value) {
+  if (!value.trim()) return 'Name is required';
+  if (value.trim().length < 2) return 'Name must be at least 2 characters';
+  return '';
+}
 
-const isFormValid = computed(
-  () => groupedItems.value.length > 0 && isNameValid.value && isPhoneValid.value
-);
+function validatePhone(value) {
+  if (!value.trim()) return 'Phone is required';
+  if (!/^[0-9+\s-]{7,15}$/.test(value.trim())) {
+    return 'Phone should contain 7–15 digits (you can include spaces, +, -)';
+  }
+  return '';
+}
 
-// --------------------------------------------------
-// Emit checkout to parent
-// --------------------------------------------------
-const onCheckout = () => {
-  if (!isFormValid.value) return;
+// live validation
+watch(name, (val) => {
+  nameError.value = validateName(val);
+});
+
+watch(phone, (val) => {
+  phoneError.value = validatePhone(val);
+});
+
+const canSubmit = computed(() => {
+  return (
+    groupedItems.value.length > 0 &&
+    !validateName(name.value) &&
+    !validatePhone(phone.value)
+  );
+});
+
+function submitOrder() {
+  // final check before emit
+  nameError.value = validateName(name.value);
+  phoneError.value = validatePhone(phone.value);
+
+  if (nameError.value || phoneError.value) {
+    return;
+  }
 
   emit('checkout', {
     name: name.value.trim(),
     phone: phone.value.trim(),
   });
-};
+
+  // optional: reset fields after successful emit
+  name.value = '';
+  phone.value = '';
+}
 </script>

@@ -201,7 +201,7 @@ const handleRemoveFromCart = (lessonId) => {
 };
 
 // ------------------------------------------
-// CHECKOUT: POST /orders + PUT /lessons/:id
+// CHECKOUT: POST /orders (backend updates spaces)
 // ------------------------------------------
 const handleCheckout = async ({ name, phone }) => {
   try {
@@ -219,7 +219,7 @@ const handleCheckout = async ({ name, phone }) => {
 
     const totalSpaces = items.reduce((sum, it) => sum + it.quantity, 0);
 
-    // Order payload for MongoDB
+    // Build order object (same shape as before)
     const orderPayload = {
       name,
       phone,
@@ -229,7 +229,7 @@ const handleCheckout = async ({ name, phone }) => {
       createdAt: new Date().toISOString(),
     };
 
-    // 1) Create order
+    // 1) Create order – backend will also update lesson spaces
     const orderRes = await fetch(`${API_BASE}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -237,26 +237,25 @@ const handleCheckout = async ({ name, phone }) => {
     });
 
     if (!orderRes.ok) {
-      console.error('Failed to create order');
-      alert('Failed to submit order. Please try again.');
+      // Try to read error message from backend
+      let message = 'Failed to submit order. Please try again.';
+      try {
+        const body = await orderRes.json();
+        if (body && body.error) {
+          message = body.error;
+        }
+      } catch {
+        // ignore JSON errors
+      }
+      alert(message);
       return;
     }
 
-    // 2) Update lesson spaces in DB
-    for (const { lessonId } of items) {
-      const lesson = lessons.value.find((l) => l.id === lessonId);
-      if (!lesson) continue;
-
-      await fetch(`${API_BASE}/lessons/${lessonId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ space: lesson.space }),
-      });
-    }
-
-    // 3) Clear cart, go back to lessons, refresh from DB
+    // 2) Clear cart and go back to lessons
     cart.value = [];
     showCart.value = false;
+
+    // 3) Refresh lessons from DB so spaces are up to date
     await fetchLessons();
 
     alert('Order submitted successfully!');
