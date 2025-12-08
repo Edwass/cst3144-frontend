@@ -17,6 +17,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # All `run:` commands will execute in vue-project
+    defaults:
+      run:
+        working-directory: vue-project
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +41,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          # path is from repo root, so include vue-project/
+          path: vue-project/dist
 
   deploy:
     environment:
@@ -47,4 +54,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
