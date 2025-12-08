@@ -1,27 +1,34 @@
 <template>
-  <section>
-    <h2>Lessons</h2>
+  <section class="lessons-section">
+    <h2 class="section-title">Lessons</h2>
 
-    <ul>
+    <ul class="lessons-grid">
       <li
         v-for="lesson in lessons"
         :key="lesson.id"
-        style="margin-bottom: 8px"
+        class="lesson-card"
       >
-        <!-- Icon (Font Awesome) -->
-        <i class="fa-solid fa-graduation-cap" style="margin-right: 6px;"></i>
+        <header class="lesson-card__header">
+          <h3 class="lesson-card__title">
+            {{ lesson.topic }}
+          </h3>
+          <p class="lesson-card__location">
+            {{ lesson.location }}
+          </p>
+        </header>
 
-        <strong>{{ lesson.topic }}</strong> – {{ lesson.location }}
-        <br />
-        Price: £{{ lesson.price }} |
-        Spaces left: {{ lesson.space }}
-        <br />
+        <p class="lesson-card__meta">
+          <span>Price: <strong>£{{ lesson.price }}</strong></span>
+          <span>Spaces left: <strong>{{ lesson.space }}</strong></span>
+        </p>
 
         <button
+          class="btn btn--secondary btn--full"
           :disabled="lesson.space === 0"
           @click="$emit('add-to-cart', lesson.id)"
         >
-          Add to Cart
+          <span v-if="lesson.space === 0">Fully booked</span>
+          <span v-else>Add to Cart</span>
         </button>
       </li>
     </ul>
@@ -36,3 +43,4 @@ defineProps({
   },
 });
 </script>
+

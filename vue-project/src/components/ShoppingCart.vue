@@ -1,52 +1,65 @@
 <template>
   <section>
-    <h2>Shopping Cart</h2>
+    <h2 class="section-title">Shopping Cart</h2>
 
-    <p v-if="groupedItems.length === 0">
+    <p v-if="groupedItems.length === 0" class="muted">
       Your cart is empty.
     </p>
 
-    <ul v-else>
-      <li v-for="item in groupedItems" :key="item.lessonId">
-        <strong>{{ item.topic }}</strong> – {{ item.location }}
-        <br>
-        Price: £{{ item.price }} |
-        Quantity: {{ item.quantity }}
-        <br>
-        <button @click="$emit('remove-one', item.lessonId)">
+    <ul v-else class="cart-list">
+      <li
+        v-for="item in groupedItems"
+        :key="item.lessonId"
+        class="cart-item"
+      >
+        <div class="cart-item__info">
+          <h3 class="cart-item__title">
+            {{ item.topic }}
+          </h3>
+          <p class="cart-item__subtitle">
+            {{ item.location }}
+          </p>
+
+          <p class="cart-item__meta">
+            Price: <strong>£{{ item.price }}</strong> |
+            Quantity: <strong>{{ item.quantity }}</strong>
+          </p>
+        </div>
+
+        <button
+          class="btn btn--ghost"
+          @click="$emit('remove-one', item.lessonId)"
+        >
           Remove one
         </button>
       </li>
     </ul>
 
-    <!-- Only show checkout form if cart has items -->
-    <div v-if="groupedItems.length > 0" style="margin-top: 20px;">
-      <h3>Checkout</h3>
+    <!-- Checkout form -->
+    <div v-if="groupedItems.length > 0" class="checkout">
+      <h3 class="section-subtitle">Checkout</h3>
 
-      <div>
-        <label>
-          Name:
-          <input v-model="name" type="text" />
+      <div class="form-row">
+        <label class="field-label">
+          Name
+          <input v-model="name" type="text" class="field-input" />
         </label>
-        <div v-if="nameError" style="color: red; font-size: 0.9em;">
-          {{ nameError }}
-        </div>
+        <p v-if="nameError" class="error-text">{{ nameError }}</p>
       </div>
 
-      <div style="margin-top: 10px;">
-        <label>
-          Phone:
-          <input v-model="phone" type="text" />
+      <div class="form-row">
+        <label class="field-label">
+          Phone
+          <input v-model="phone" type="text" class="field-input" />
         </label>
-        <div v-if="phoneError" style="color: red; font-size: 0.9em;">
-          {{ phoneError }}
-        </div>
+        <p v-if="phoneError" class="error-text">{{ phoneError }}</p>
       </div>
 
-      <div style="margin-top: 10px;">
+      <div class="form-row form-row--right">
         <button
-          @click="submitOrder"
+          class="btn btn--primary"
           :disabled="!canSubmit"
+          @click="submitOrder"
         >
           Confirm Order
         </button>
@@ -67,27 +80,24 @@ const props = defineProps({
 
 const emit = defineEmits(['remove-one', 'checkout']);
 
-/**
- * Group cart items by lessonId and compute quantity.
- * Each grouped item has:
- * { lessonId, topic, location, price, quantity }
- */
+// group cart items by lessonId
 const groupedItems = computed(() => {
   const map = new Map();
 
   for (const item of props.cartItems) {
-    const id = item.lessonId ?? item.id; // support both shapes
+    const key = item.lessonId ?? item.id;
+    const existing = map.get(key);
 
-    if (!map.has(id)) {
-      map.set(id, {
-        lessonId: id,
+    if (!existing) {
+      map.set(key, {
+        lessonId: key,
         topic: item.topic,
         location: item.location,
         price: item.price,
         quantity: 1,
       });
     } else {
-      map.get(id).quantity += 1;
+      existing.quantity += 1;
     }
   }
 
@@ -133,20 +143,16 @@ const canSubmit = computed(() => {
 });
 
 function submitOrder() {
-  // final check before emit
   nameError.value = validateName(name.value);
   phoneError.value = validatePhone(phone.value);
 
-  if (nameError.value || phoneError.value) {
-    return;
-  }
+  if (nameError.value || phoneError.value) return;
 
   emit('checkout', {
     name: name.value.trim(),
     phone: phone.value.trim(),
   });
 
-  // optional: reset fields after successful emit
   name.value = '';
   phone.value = '';
 }

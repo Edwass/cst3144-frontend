@@ -1,18 +1,46 @@
 <template>
-  <form @submit.prevent="submitForm">
-    <label>Subject / Topic:</label>
-    <input v-model="topic" required />
+  <form class="form" @submit.prevent="submitForm">
+    <div class="form-row form-row--inline">
+      <label class="field-label">
+        Subject / Topic
+        <input v-model="topic" class="field-input" required />
+      </label>
 
-    <label>Location:</label>
-    <input v-model="location" required />
+      <label class="field-label">
+        Location
+        <input v-model="location" class="field-input" required />
+      </label>
+    </div>
 
-    <label>Price (£):</label>
-    <input type="number" v-model.number="price" min="0" required />
+    <div class="form-row form-row--inline">
+      <label class="field-label">
+        Price (£)
+        <input
+          v-model.number="price"
+          type="number"
+          min="0"
+          class="field-input"
+          required
+        />
+      </label>
 
-    <label>Spaces:</label>
-    <input type="number" v-model.number="space" min="0" required />
+      <label class="field-label">
+        Spaces
+        <input
+          v-model.number="space"
+          type="number"
+          min="0"
+          class="field-input"
+          required
+        />
+      </label>
+    </div>
 
-    <button type="submit">Add Lesson</button>
+    <div class="form-row form-row--right">
+      <button type="submit" class="btn btn--primary">
+        Add Lesson
+      </button>
+    </div>
   </form>
 </template>
 
@@ -34,8 +62,8 @@ const submitForm = async () => {
       topic: topic.value,
       location: location.value,
       price: price.value,
-      space: space.value
-    })
+      space: space.value,
+    }),
   });
 
   if (!response.ok) {
@@ -44,9 +72,8 @@ const submitForm = async () => {
   }
 
   await response.json();
-  emit('lesson-added'); // notify parent to refresh
+  emit('lesson-added');
 
-  // Reset form
   topic.value = '';
   location.value = '';
   price.value = 0;

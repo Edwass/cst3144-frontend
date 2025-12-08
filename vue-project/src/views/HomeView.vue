@@ -1,80 +1,96 @@
 <template>
-  <main>
-    <h1>Lessons Manager</h1>
+  <main class="app">
+    <header class="app-header">
+      <h1 class="app-title">Lessons Manager</h1>
 
-    <!-- Toggle Buttons -->
-    <div>
-      <button
-        :disabled="!showCart"
-        @click="showCart = false"
-      >
-        Lessons
-      </button>
+      <!-- Toggle Buttons -->
+      <nav class="tabs">
+        <button
+          class="tab"
+          :class="{ 'tab--active': !showCart }"
+          :disabled="!showCart"
+          @click="showCart = false"
+        >
+          Lessons
+        </button>
 
-      <button
-        :disabled="cart.length === 0 || showCart"
-        @click="showCart = true"
-      >
-        Shopping Cart ({{ cart.length }})
-      </button>
-    </div>
+        <button
+          class="tab"
+          :class="{ 'tab--active': showCart }"
+          :disabled="cart.length === 0 || showCart"
+          @click="showCart = true"
+        >
+          Shopping Cart ({{ cart.length }})
+        </button>
+      </nav>
+    </header>
 
     <!-- Lessons Page -->
-    <section v-if="!showCart">
-      <LessonForm @lesson-added="fetchLessons" />
+    <section v-if="!showCart" class="layout">
+      <section class="card card--form">
+        <h2 class="card-title">Add New Lesson</h2>
+        <LessonForm @lesson-added="fetchLessons" />
+      </section>
 
-      <!-- Search box (search as you type) -->
-      <div style="margin: 10px 0;">
-        <label>
-          Search:
-          <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="Type to search subject, location, price, spaces..."
-          />
-        </label>
-      </div>
+      <section class="card card--tools">
+        <!-- Search box (search as you type) -->
+        <div class="form-row">
+          <label class="field-label">
+            Search
+            <input
+              v-model="searchTerm"
+              type="text"
+              class="field-input"
+              placeholder="Type to search subject, location, price, spaces..."
+            />
+          </label>
+        </div>
 
-      <!-- Sort controls -->
-      <div style="margin: 10px 0;">
-        <label>
-          Sort by:
-          <select v-model="sortBy">
-            <option value="topic">Subject</option>
-            <option value="location">Location</option>
-            <option value="price">Price</option>
-            <option value="space">Spaces</option>
-          </select>
-        </label>
+        <!-- Sort controls -->
+        <div class="form-row form-row--inline">
+          <label class="field-label">
+            Sort by
+            <select v-model="sortBy" class="field-input">
+              <option value="topic">Subject</option>
+              <option value="location">Location</option>
+              <option value="price">Price</option>
+              <option value="space">Spaces</option>
+            </select>
+          </label>
 
-        <label style="margin-left: 10px;">
-          Order:
-          <select v-model="sortOrder">
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-          </select>
-        </label>
-      </div>
+          <label class="field-label">
+            Order
+            <select v-model="sortOrder" class="field-input">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </label>
+        </div>
+      </section>
 
-      <LessonList
-        :lessons="sortedLessons"
-        @add-to-cart="handleAddToCart"
-      />
+      <section class="card card--lessons">
+        <LessonList
+          :lessons="sortedLessons"
+          @add-to-cart="handleAddToCart"
+        />
+      </section>
     </section>
 
     <!-- Cart Page -->
-    <section v-else>
-      <ShoppingCart
-        :cart-items="cart"
-        @remove-one="handleRemoveFromCart"
-        @checkout="handleCheckout"
-      />
+    <section v-else class="layout">
+      <section class="card card--cart">
+        <ShoppingCart
+          :cart-items="cart"
+          @remove-one="handleRemoveFromCart"
+          @checkout="handleCheckout"
+        />
+      </section>
     </section>
   </main>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, inject } from 'vue';
 import LessonForm from '../components/LessonForm.vue';
 import LessonList from '../components/LessonList.vue';
 import ShoppingCart from '../components/ShoppingCart.vue';
@@ -89,6 +105,9 @@ const showCart = ref(false);   // Toggle lessons <-> cart view
 const sortBy = ref('topic');
 const sortOrder = ref('asc');
 const searchTerm = ref('');
+
+// Toast instance provided from App.vue
+const toast = inject('toast');
 
 const API_BASE = 'http://localhost:3000';
 
@@ -247,7 +266,9 @@ const handleCheckout = async ({ name, phone }) => {
       } catch {
         // ignore JSON errors
       }
-      alert(message);
+
+      // Toast error instead of alert
+      toast?.value?.show(message, 'error');
       return;
     }
 
@@ -258,10 +279,12 @@ const handleCheckout = async ({ name, phone }) => {
     // 3) Refresh lessons from DB so spaces are up to date
     await fetchLessons();
 
-    alert('Order submitted successfully!');
+    // Toast success message
+    toast?.value?.show('Order submitted successfully!', 'success');
   } catch (err) {
     console.error('Checkout error:', err);
-    alert('Something went wrong during checkout.');
+    // Toast generic error
+    toast?.value?.show('Something went wrong during checkout.', 'error');
   }
 };
 </script>
