@@ -109,7 +109,12 @@ const searchTerm = ref('');
 // Toast instance provided from App.vue
 const toast = inject('toast');
 
-const API_BASE = 'http://localhost:3000';
+// For local development:
+// const API_BASE = 'http://localhost:3000';
+
+// For deployed GitHub Pages + Render backend:
+const API_BASE = 'https://cst3144-backend-ftv8.onrender.com';
+
 
 // Helper: normalise lessons so they always have an "id" string
 const normaliseLessons = (rawArray) =>
